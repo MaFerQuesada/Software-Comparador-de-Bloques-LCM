@@ -22,9 +22,8 @@ from copy import copy
 import shutil                                                       # Biblioteca para copiar archivos
 from decimal import Decimal                                         # Biblioteca para trabajar correctamente operaciones aritméticas con flotantes decimales
 import curses														# Biblioteca para interacción con el teclado
-import pyoo															# Biblioteca para trabajar con libre Office
-from pyoo import Desktop
-import os                                                           # Biblioteca para interactuar con el sistema operativo de la computadora
+import os                                                           # Biblioteca para interactuar con el sistema operativo
+import warnings
 
 ################################################################
 
@@ -139,7 +138,6 @@ def DatosTESA():
         return data
     while detenerse == 0:
         data=recv(serTESA)          #Llamada de la función
-        print(data)
         if data != b"":             #Comparación de datos recibidos, vacío hasta que se de la medición
             try:
                 medicion=float(data) #Pasando de string a float
@@ -147,7 +145,6 @@ def DatosTESA():
             
             except:
                 divisionDatos=data.split()
-                print(divisionDatos)
                 medicion=float(divisionDatos[1])    #Pasando de string a decimal
                 MedicionBloque=medicion #Guardando dato en lista
             detenerse = 1           #Condición para salir del while
@@ -185,7 +182,7 @@ def DatosFluke():
         return data
     while detenerse == 0:
         data=recv(serFluke) #Llamada de la función
-        print(data)
+
         if data != b"": #Comparación de datos recibidos, vacío hasta que se de la medición
             todas=data.split()#Separar los 4 datos en una lista
             MedicionTemp1=float(todas[0]) #Guardando temperatura 1 en lista
@@ -237,7 +234,6 @@ def DatosVaisala():
         data=recv(serVaisala)                   #Llamada de la función
         if data.split()[0] == b'OK': 						#Comparación de datos recibidos, vacío hasta que se de la medición
             todos=data.split()					#Separar los 4 datos en una lista
-            print(data)
             
             DatoPresVaisala=float(todos[3]) #Guardando presión atmosférica en lista
             DatoTempVaisala=float(todos[6]) #Guardando temperatura en lista
@@ -589,13 +585,12 @@ def selectorMachote(seleccionSecuencia):
 		
 ################## Creación de un archivo para la calibración ##################
 
-def CrearArchivoCalibracion(seleccionSecuencia):
+def CrearArchivoCalibracion(seleccionSecuencia, numCertificado):
 	# Se escoge sobre qué machote se va a trabajar a partir de la secuencia de calibración escogida por el usuario:
 	machote = selectorMachote(seleccionSecuencia)
 
 	# Se crea un duplicado del machote, nombrado con una marca temporal:
-	fecha = datetime.datetime.now() # Fecha y hora del día
-	archivoCalibracion = "./Calibraciones en curso/Calibración"+str(fecha.strftime("%c"))+".xlsm" # Nombre del archivo para la calibración
+	archivoCalibracion = "./Calibraciones en curso/" + numCertificado + ".xlsm" # Nombre del archivo para la calibración
 	shutil.copy(machote, archivoCalibracion) # Creación del duplicado del machote
 
 	return archivoCalibracion
@@ -608,11 +603,11 @@ def AutocompletarInformacionCliente(nombreCliente, direccionCliente, numeroCerti
     informacionCliente = BusquedaClientes(nombreCliente)
    
     # Carga del archivo de excel que contiene la información del cliente 
-    workbookSolicitantes = load_workbook(filename=informacionCliente[2], keep_vba=True)
+    workbookSolicitantes = load_workbook(filename=informacionCliente[2], keep_vba = True, data_only = True)
     hojaJuego = workbookSolicitantes[identificacionCalibrando] # Selección de la hoja que contiene la información del juego a calibrar
 
     # Carga del archivo de excel creado para la calibración:
-    workbookCalibracion = load_workbook(filename=CrearArchivoCalibracion(seleccionSecuencia), keep_vba=True)
+    workbookCalibracion = load_workbook(filename=CrearArchivoCalibracion(seleccionSecuencia, numeroCertificado), keep_vba=True)
     #Definir los nombres de las hojas del libro de excel en el que se está trabajando:
     hojaConversionDatos = workbookCalibracion["conversion datos"]
     hojaIdentificacionBloques = workbookCalibracion["Ident.Bloques a calibrar"]
@@ -771,7 +766,7 @@ def EncabezadosCentroYPlanitud(numRepeticiones, hojaResultadosCalibracion):
 
 ################## Cálculos del promedio y la desviación estándar ###################
 
-def CalculosDesviacionCentral(numRepeticiones, numNuevasColumnas, hojaResultadosCalibracion):
+def CalculosDesviacionCentral(hojaResultadosCalibracion):
 
     #Calcular el promedio de la diferencia entre el patrón y el calibrando con fórmulas en Excel
     #Calcular la desviación estándar del promedio de la diferencia entre el patrón y el calibrando con fórmulas en Excel
@@ -801,16 +796,17 @@ def CalculosDesviacionCentral(numRepeticiones, numNuevasColumnas, hojaResultados
             elif stringDif == len(listaDiferencias)-1:
                 argumentoFormulaCentral = argumentoFormulaCentral + listaDiferencias[stringDif]           
         
-        #Los cálculos se hacen específicamente con la librería pyoo:
-        #Conectarse a una instancia activa de LibreOffice Calc
-        desktop = Desktop()
-        archivoCalibracion =  desktop.get_active_document()
-        hojaResultadosCalibracion = archivoCalibracion.getSheetByName("Introduccion de datos de Calib.")
+        #Se obtienen las fórmulas predefinidas en la hoja de excel
+        formulaPromedio = hojaResultadosCalibracion["E"+str(l)].value
+        formulaDesvst = hojaResultadosCalibracion["F"+str(l)].value
         
-        #Se escriben las fórmulas para calcular el promedio y la desviación estándar en las celdas correspondientes en Excel
-        hojaResultadosCalibracion[l,4].set_formula("=AVERAGE(" + argumentoFormulaCentral + ")")
-        hojaResultadosCalibracion[l,5].set_formula("=STDEV.S("+ argumentoFormulaCentral +")")
-        archivoCalibracion.calculate_all() #Se calculan las fórmulas
+        #Se modifican las fórmulas agregando el argumento construído
+        promedioModif = formulaPromedio.replace("))",f"{argumentoFormulaCentral}))")
+        DesvstModif = formulaDesvst.replace("))",f"{argumentoFormulaCentral}))")
+        
+        #Se actualizan las celdas con las fórmulas modificadas
+        hojaResultadosCalibracion["E"+str(l)] = promedioModif
+        hojaResultadosCalibracion["F"+str(l)] = DesvstModif
         
         l += 1
     return
@@ -910,7 +906,7 @@ def selectorFilaResultados(hojaResultadosCalibracion):
 
 def EliminarArchivo(rutaArchivoEliminar):
     #Revisar si el archivo existe
-    if os.path_exists(rutaArchivoEliminar):
+    if os.path.exists(rutaArchivoEliminar):
         #Borrar el archivo
         os.remove(rutaArchivoEliminar)
     else:
@@ -920,83 +916,87 @@ def EliminarArchivo(rutaArchivoEliminar):
     
 ################## Proceso de calibración de bloques ##################
 
-def ProcesoCalibracion(seleccionSecuencia, tiempoinicial, tiempoestabilizacion, numRepeticiones):
+def ProcesoCalibracion(seleccionSecuencia, tiempoinicial, tiempoestabilizacion, numRepeticiones, hojaResultadosCalibracion, nombreArchivoCalibracion, libroExcel):
     
 	#Si se va calibrar los bloques solo con desviación central se hace lo siguiente:
-	if seleccionSecuencia == "Desviación central":
-		numNuevasColumnas = EncabezadosDesviacionCentral(numRepeticiones, hojaResultadosCalibracion)
-		continuarCalibracion = "si"
-		while continuarCalibracion == "si":
-			valorBloque = Decimal(float(input("Indique el valor del bloque a Calibrar: ")))
-			numFila = selectorFilaResultados(hojaResultadosCalibracion)
-			hojaResultadosCalibracion["A"+str(numFila)] = valorBloque
+    if seleccionSecuencia == "Desviación central":
+        continuarCalibracion = "si"
+        while continuarCalibracion == "si":
+            valorBloque = Decimal(float(input("Indique el valor del bloque a Calibrar: ")))
+            numFila = selectorFilaResultados(hojaResultadosCalibracion)
+            hojaResultadosCalibracion["A"+str(numFila)] = valorBloque
 			
 			#Medición y registro de las condiciones ambientales iniciales
-			listaMedicionesTemperatura = DatosFluke()
-			hojaResultadosCalibracion["I"+str(numFila)] = listaMedicionesTemperatura[0]
-			hojaResultadosCalibracion["J"+str(numFila)] = listaMedicionesTemperatura[1]
-			hojaResultadosCalibracion["K"+str(numFila)] = listaMedicionesTemperatura[2]
-			hojaResultadosCalibracion["L"+str(numFila)] = listaMedicionesTemperatura[3]
-			hojaResultadosCalibracion["M"+str(numFila)] = DatosVaisala()	#Dato de humedad relativa inicial
+            listaMedicionesTemperatura = DatosFluke()
+            hojaResultadosCalibracion["I"+str(numFila)] = listaMedicionesTemperatura[0]
+            hojaResultadosCalibracion["J"+str(numFila)] = listaMedicionesTemperatura[1]
+            hojaResultadosCalibracion["K"+str(numFila)] = listaMedicionesTemperatura[2]
+            hojaResultadosCalibracion["L"+str(numFila)] = listaMedicionesTemperatura[3]
+            hojaResultadosCalibracion["M"+str(numFila)] = DatosVaisala()	#Dato de humedad relativa inicial
 			
-			numColumnaMediciones = 19 #Contador inicia en 19 porque ese es el número de la columna a partir del
+            numColumnaMediciones = 19 #Contador inicia en 19 porque ese es el número de la columna a partir del
 			#cual se empiezan a registar las mediciones de los bloques
 			
 			#Se realizan las mediciones de los bloques y se guardan en una lista [patrón, calibrando, patrón, calibrando,...]
-			listaMedicionesBloque = Centros(tiempoinicial, tiempoestabilizacion, numRepeticiones)[0]
-			for numMedicion in range(len(listaMedicionesBloque)):
-				letraColumnaMedicion = openpyxl.utils.cell.get_column_letter(numColumnaMediciones)
-				hojaResultadosCalibracion[letraColumnaMedicion+str(numFila)] = listaMedicionesBloque[numMedicion]
-				numColumnaMediciones += 1
+            listaMedicionesBloque = Centros(tiempoinicial, tiempoestabilizacion, numRepeticiones)[0]
+            for numMedicion in range(len(listaMedicionesBloque)):
+                letraColumnaMedicion = openpyxl.utils.cell.get_column_letter(numColumnaMediciones)
+                hojaResultadosCalibracion[letraColumnaMedicion+str(numFila)] = listaMedicionesBloque[numMedicion]
+                numColumnaMediciones += 1
 			
 			#Medición y registro de las condiciones ambientales finales
-			listaMedicionesTemperatura = DatosFluke()
-			hojaResultadosCalibracion["N"+str(numFila)] = listaMedicionesTemperatura[0]
-			hojaResultadosCalibracion["O"+str(numFila)] = listaMedicionesTemperatura[1]
-			hojaResultadosCalibracion["P"+str(numFila)] = listaMedicionesTemperatura[2]
-			hojaResultadosCalibracion["Q"+str(numFila)] = listaMedicionesTemperatura[3]
-			hojaResultadosCalibracion["R"+str(numFila)] = DatosVaisala()	#Dato de humedad relativa final
-			
-			continuarCalibracion = input("¿Desea continuar con la calibración?: ") 
-        else:
-            pausarCalibracion = ("¿Desea Pausar la calibración o ya ha finalizado?" + \n + "Escriba \"a\" si desea Pausar la calibración ó \"b\" si desea Finalizar la calibración: ")
-            if pausarCalibracion == "a": #Se Pausa la calibración (aún no se realizan cálculos)
-                rutaGuardarPausa = "./Calibraciones en curso/" + nombreArchivoCalibracion
+            listaMedicionesTemperatura = DatosFluke()
+            hojaResultadosCalibracion["N"+str(numFila)] = listaMedicionesTemperatura[0]
+            hojaResultadosCalibracion["O"+str(numFila)] = listaMedicionesTemperatura[1]
+            hojaResultadosCalibracion["P"+str(numFila)] = listaMedicionesTemperatura[2]
+            hojaResultadosCalibracion["Q"+str(numFila)] = listaMedicionesTemperatura[3]
+            hojaResultadosCalibracion["R"+str(numFila)] = DatosVaisala()	#Dato de humedad relativa final
+            
+            continuarCalibracion = input("¿Desea continuar con la calibración?: ") 
+            
+        pausarCalibracion = input("¿Desea Pausar la calibración o ya ha finalizado? \nEscriba 'a' si desea Pausar la calibración ó 'b' si desea Finalizar la calibración: ")
+        if pausarCalibracion == "a": #Se Pausa la calibración (aún no se realizan cálculos)
+            rutaGuardarPausa = "./Calibraciones en curso/" + nombreArchivoCalibracion
+            libroExcel.save(rutaGuardarPausa)
+            print("Calibración pausada. \nPuede revisar el archivo correspondiente en la carpeta \"Calibraciones en curso\".")
                 
-            elif pausarCalibración == "b": #Se Finaliza la calibración
-                # CalculosDesviacionCentral(numRepeticiones, numNuevasColumnas, hojaResultadosCalibracion)
-                rutaGuardar = "./Calibraciones Finalizadas/" + nombreArchivoCalibracion #Se guarda el archivo de la calibración a partir del número de Certificado
-                libroExcel.save(rutaGuardar)  
-                EliminarArchivo("./Calibraciones en curso/" + nombreArchivoCalibracion) #Se elimina el archivo de la calibración de la carpeta "Calibraciones en curso"
-                print("Calibración finalizada. Puede revisar el archivo correspondiente en la carpeta \"Calibraciones Finalizadas\".")
-					
+        elif pausarCalibracion == "b": #Se Finaliza la calibración
+            CalculosDesviacionCentral(hojaResultadosCalibracion)
+            rutaGuardar = "./Calibraciones Finalizadas/" + nombreArchivoCalibracion #Se guarda el archivo de la calibración a partir del número de Certificado
+            libroExcel.save(rutaGuardar)  
+            EliminarArchivo("./Calibraciones en curso/" + nombreArchivoCalibracion) #Se elimina el archivo de la calibración de la carpeta "Calibraciones en curso"
+            print("Calibración finalizada. Puede revisar el archivo correspondiente en la carpeta \"Calibraciones Finalizadas\".")
+				
 	#Si se va a calibrar los bloques con desviación + planitud
-	elif:
-		print("No se ha programado esto aún")
-    
-	return
+    else:
+        print("No se ha programado esto aún")
+    return
     
 ################## Nueva Calibración ##################
 
 def NuevaCalibracion(nombreCliente, numeroCertificado, numeroSolicitud, identificacionCalibrando, 
                                     responsableCalibracion, responsableRevision, patron, materialPatron, seleccionSecuencia, tiempoinicial, tiempoestabilizacion, numRepeticiones):
     
-	nombreCliente, direccionCliente, archivoCliente = BusquedaClientes(nombreCliente)		#Búsqueda de los datos del cliente
-	machote = selectorMachote(seleccionSecuencia)											#Selección de la plantilla del machote que se va a utilizar 
+    nombreCliente, direccionCliente, archivoCliente = BusquedaClientes(nombreCliente)		#Búsqueda de los datos del cliente
+    machote = selectorMachote(seleccionSecuencia)											#Selección de la plantilla del machote que se va a utilizar 
     
 	#Creación de un duplicado del machote, nombrado con el número de certificado
-	fecha = datetime.datetime.now() 	
-	nombreArchivoCalibracion = numeroCertificado + ".xlsm" 												#Fecha y hora en la que se comienza la calibración
-	archivoCalibracion = "./Calibraciones en curso/" + nombreArchivoCalibracion # Ruta del archivo para la calibración
-	shutil.copy(machote, archivoCalibracion)												#Creación del duplicado del machote
+    nombreArchivoCalibracion = numeroCertificado + ".xlsm" 												#Fecha y hora en la que se comienza la calibración
+    archivoCalibracion = "./Calibraciones en curso/" + nombreArchivoCalibracion # Ruta del archivo para la calibración
+    shutil.copy(machote, archivoCalibracion)												#Creación del duplicado del machote
     
 	#Ingreso de interés del cliente y de la calibración al archivo de Excel
-	archivoExcel = AutocompletarInformacionCliente(nombreCliente, direccionCliente, numeroCertificado, numeroSolicitud, identificacionCalibrando, 
+    archivoExcel = AutocompletarInformacionCliente(nombreCliente, direccionCliente, numeroCertificado, numeroSolicitud, identificacionCalibrando, 
                                     responsableCalibracion, responsableRevision, patron, materialPatron, seleccionSecuencia)
-	libroExcel = archivoExcel[0]
-	hojaResultadosCalibracion = archivoExcel[1]
+    libroExcel = archivoExcel[0]
+    hojaResultadosCalibracion = archivoExcel[1]
     
-    ProcesoCalibracion(seleccionSecuencia, tiempoinicial, tiempoestabilizacion, numRepeticiones)
+    if seleccionSecuencia == "Desviación central":
+        EncabezadosDesviacionCentral(numRepeticiones, hojaResultadosCalibracion)
+    else:
+        print("Otra opción")
+    
+    ProcesoCalibracion(seleccionSecuencia, tiempoinicial, tiempoestabilizacion, numRepeticiones, hojaResultadosCalibracion, nombreArchivoCalibracion, libroExcel)
     
     return
     
@@ -1005,21 +1005,28 @@ def NuevaCalibracion(nombreCliente, numeroCertificado, numeroSolicitud, identifi
 
 def ReanudarCalibracion(numCertificado, tiempoinicial, tiempoestabilizacion):
     
-    workbookCalibracionEnCurso = load_workbook(filename="Clientes.xlsx", keep_vba=True) #Apertura del archivo de excel de la calibración en curso
-    hojaResultadosCalibracion = hojaResultadosCalibracion = workbookCalibracion["Introduccion de datos de Calib."] #Se abre la hoja de Excel donde se están registrando los datos de la calibración
+    nombreArchivoEnCurso = numCertificado + ".xlsm" 
+    rutaEnCurso = "./Calibraciones en curso/" + nombreArchivoEnCurso
     
-    #Identificar con qué secuencia se está trabajando antes de continuar con la calibración
-    if hojaResultadosCalibracion["S1"].value == "Patrón #1":
-        seleccionSecuencia = "Desviación central"
-    else: 
-        seleccionSecuencia = "Desviación central y planitud"
+    if os.path.exists(rutaEnCurso): #Si el archivo de la calibración en curso existe:
+        workbookCalibracionEnCurso = load_workbook(filename = rutaEnCurso, keep_vba = True, data_only = True) #Apertura del archivo de excel de la calibración en curso
+        hojaResultadosCalibracion = workbookCalibracionEnCurso["Introduccion de datos de Calib."] #Se abre la hoja de Excel donde se están registrando los datos de la calibración
+    
+        #Identificar con qué secuencia se está trabajando antes de continuar con la calibración
+        if hojaResultadosCalibracion["S1"].value == "Patrón #1":
+            seleccionSecuencia = "Desviación central"
+        else: 
+            seleccionSecuencia = "Desviación central y planitud"
         
-    #Identificar el número de repeticiones con el que se está trabajando
-    numRepeticiones = hojaResultadosCalibracion["H2"].value
+        #Identificar el número de repeticiones con el que se está trabajando
+        numRepeticiones = hojaResultadosCalibracion["H2"].value
     
-    #Se continúa con el proceso de calibración
-    ProcesoCalibracion(seleccionSecuencia, tiempoinicial, tiempoestabilizacion, numRepeticiones)
-    
+        #Se continúa con el proceso de calibración
+        ProcesoCalibracion(seleccionSecuencia, tiempoinicial, tiempoestabilizacion, numRepeticiones, hojaResultadosCalibracion, nombreArchivoEnCurso, workbookCalibracionEnCurso)
+
+    else: #Si el archivo indicado no existe
+        print("No hay una calibración en curso guardada con el número de certificado " + numCertificado +".")
+
     return
 
 ################## Agregar cliente ##################
@@ -1070,7 +1077,7 @@ def IngresarCalibrando(nombreCliente, objeto, marca, numSerie, material, modelo,
             break
 
     if existeCalibrando:
-        print("Ya existe un calibrando registrado con el númerio de serie "+ numSerie)
+        print("Ya existe un calibrando registrado con el númerio de serie " + numSerie + ".")
 
     #Crear una hoja para el nuevo calibrando
     if len(workbookCliente.sheetnames) > 1: #Si ya existen calibrandos registrados en el archivo
@@ -1134,8 +1141,18 @@ def IngresarCalibrando(nombreCliente, objeto, marca, numSerie, material, modelo,
 
     workbookCliente.save(archivoCliente)
     return
+    
+################## Ocultar advertencias en terminal ##################
+
+def fxn():
+    warnings.warn("deprecated", DeprecationWarning)
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    fxn()
 
 ################## Programa Temporal Comparador Bloques ##################
 
-moverManual()
-NuevaCalibracion("Instituto Costarricense de Electricidad", "LCM12345", "67890", "12345","Fernanda Quesada", "Leonardo Rojas", "Bloques Patrón de Cerámica de 0,5 mm a 100 mm", "Cerámica", "Desviación central", 0.25, 10, 2)
+#moverManual()
+#NuevaCalibracion("Instituto Costarricense de Electricidad", "LCM12345", "67890", "12345","Fernanda Quesada", "Leonardo Rojas", "Bloques Patrón de Cerámica de 0,5 mm a 100 mm", "Cerámica", "Desviación central", 0.25, 10, 2)
+ReanudarCalibracion("LCM12345", 0.25, 10)
