@@ -1,0 +1,318 @@
+#:kivy 2.1.0
+#UsersPage:
+#:set backgoundColorDarkLv1 0.15, 0.15, 0.15, 1
+#:set backgoundColorDarkLv2 0.125, 0.125, 0.125, 1
+#:set backgoundColorDarkLv3 0.1, 0.1, 0.1, 1
+#:set menuButtonColor       0.15, 0.15, 0.15, 1
+#:set menuButtonColorHighlight       0.17, 0.17, 0.17, 1
+#:set textColorDark         1, 1, 1, 1
+#:set lineColorDark         1, 1, 1, 1
+
+<CalibrationPageLayout>:
+    BoxLayout:
+        orientation: "vertical"
+        # canvas.before:
+        #     Color:
+        #         rgba: app.root.backgoundColorDarkLv20#
+        #     Rectangle:
+        #         pos: self.pos
+        #         size: self.size
+        
+        ScrollView:
+            scroll_type: ["bars"]
+            StackLayout:
+                orientation: "lr-tb"
+                size_hint: 1, None
+                height: self.minimum_height#"500dp"
+
+                # Espacio para Numero de certificado
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: NombreCliente
+                        text: "Nombre del cliente"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+
+                # Espacio para Solicitante
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: NumCertificado
+                        text: "Numero de certificado"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+
+                # Espacio para el número de solicitud
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: NumSolicitud
+                        text: "Número de solicitud"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+
+                # Espacio para la identificación del calibrando
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: NumSerie
+                        text: "Número de serie del calibrando"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+
+                # Espacio para ingresar al responsable de la calibración
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: Responsable
+                        text: "Responsable de la calibración"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+
+                # Espacio para ingresar al responsable de la revisión
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: Revision
+                        text: "Responsable de la revisión"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+         
+                # Espacio para ingresar el patrón a utilizar 
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: Patron
+                        text: "Seleccione el patrón"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+
+                # Espacio para ingresar el material del patrón
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: Material
+                        text: "Seleccione el material del patrón"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+
+                # Espacio para ingresar la secuencia de calibración
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: Secuencia
+                        text: "Seleccione la secuencia de calibración"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+
+                # Espacio para indicar el número de repeticiones por bloque
+                BoxLayout:
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    height: "90dp"  
+                    Label:
+                        id: NumRep
+                        text: "Indique el número de repeticiones"
+                        size_hint: None,1
+                        width: "250dp"
+                        text_size: self.size
+                        padding: "20dp","10dp"
+                        halign: "left"
+                        color: app.textColor
+                    BoxLayout:
+                        padding: "20dp","5dp"
+                        TextInput:
+                            background_color: app.textboxColor
+                            background_normal: ""
+                            multiline: False 
+                            size_hint: 1,None
+                            height: "50dp"
+                            foreground_color: app.textColor
+                            halign: "left"
+                            font_size: self.height*0.35
+                            padding: 6,14,6,6
+
+                # Botón para continuar 
+                BoxLayout:
+                    padding: "20dp","20dp"
+                    orientation: "vertical"
+                    size_hint: 1, None
+                    # height: self.minimum_height
+                    Label:
+                        text: ""
+                        size_hint: 0.8, 1
+                    Button:
+                        pos_hint: {"center_x": 0.9, "top": 1 }
+                        size_hint: 0.2,None
+                        height: "50dp"
+                        width: "200dp"
+                        text: "Continuar"
+                        color: app.textColor
+                        background_normal: ''
+                        background_color: app.generalButtonColor
+                        on_release: app.root.call_NuevaCalibracion(self)            
